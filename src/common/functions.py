@@ -7,7 +7,7 @@ def identity_function(x):
 
 
 def step_function(x):
-    return np.array(x > 0, dtype=np.int)
+    return np.array(x > 0, dtype=np.int32)
 
 
 def sigmoid(x):
@@ -27,7 +27,9 @@ def sigmoid(x):
 
 
 def sigmoid_grad(x):
-    return (1.0 - sigmoid(x)) * sigmoid(x)
+    s = sigmoid(x)
+    return s * (1 - s)
+
     
 
 def relu(x):
@@ -35,20 +37,22 @@ def relu(x):
 
 
 def relu_grad(x):
-    grad = np.zeros(x)
-    grad[x>=0] = 1
+    grad = np.zeros_like(x)
+    grad[x >= 0] = 1
     return grad
+
     
 
 def softmax(x):
     if x.ndim == 2:
-        x = x.T
-        x = x - np.max(x, axis=0)
-        y = np.exp(x) / np.sum(np.exp(x), axis=0)
-        return y.T 
+        x = x - np.max(x, axis=1, keepdims=True)
+        exp_x = np.exp(x)
+        return exp_x / (np.sum(exp_x, axis=1, keepdims=True) + 1e-15)
+    
+    x = x - np.max(x)
+    exp_x = np.exp(x)
+    return exp_x / (np.sum(exp_x) + 1e-15)
 
-    x = x - np.max(x) # 溢出对策
-    return np.exp(x) / np.sum(np.exp(x))
 
 
 def mean_squared_error(y, t):
@@ -60,12 +64,13 @@ def cross_entropy_error(y, t):
         t = t.reshape(1, t.size)
         y = y.reshape(1, y.size)
         
-    # 监督数据是one-hot-vector的情况下，转换为正确解标签的索引
     if t.size == y.size:
         t = t.argmax(axis=1)
              
     batch_size = y.shape[0]
-    return -np.sum(np.log(y[np.arange(batch_size), t] + 1e-7)) / batch_size
+    # 最大避免 log(0)
+    return -np.sum(np.log(np.maximum(y[np.arange(batch_size), t], 1e-15))) / batch_size
+
 
 
 def softmax_loss(X, t):
