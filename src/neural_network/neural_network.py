@@ -70,7 +70,7 @@ def forward(network, x):
     a2 = np.dot(z1, W2) + b2
     z2 = sigmoid(a2)
     a3 = np.dot(z2, W3) + b3
-    y = a3  # 输出层不使用激活函数（恒等函数）
+    y = softmax(a3)
     return y
 
 network = init_network()
